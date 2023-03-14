@@ -2,6 +2,8 @@ package entelect.training.incubator.spring.booking.controller;
 
 import entelect.training.incubator.spring.booking.model.Booking;
 import entelect.training.incubator.spring.booking.service.BookingsService;
+import entelect.training.incubator.spring.customer.model.Customer;
+import entelect.training.incubator.spring.flight.model.Flight;
 import entelect.training.incubator.spring.loyalty.server.RewardsServiceImpl;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -47,11 +49,13 @@ public class BookingsController {
         HttpEntity<?> entity = new HttpEntity<>(headers);
 
         try {
-            restTemplate.exchange("http://localhost:8201/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, String.class);
-            restTemplate.exchange("http://localhost:8202/flights/" + booking.getFlightId(), HttpMethod.GET, entity, String.class);
+            Customer customer = restTemplate.exchange("http://localhost:8201/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, Customer.class).getBody();
+            Flight flight = restTemplate.exchange("http://localhost:8202/flights/" + booking.getFlightId(), HttpMethod.GET, entity, Flight.class).getBody();
             final Booking savedBooking  = bookingsService.createBooking(booking);
 
-            rewardsService.updateBalance("123", BigDecimal.valueOf(100));
+            BigDecimal balance = rewardsService.getBalance(customer.getPassportNumber());
+            balance = balance.add(BigDecimal.valueOf(100));
+            rewardsService.updateBalance(customer.getPassportNumber(), balance);
 
             return new ResponseEntity<>(savedBooking, HttpStatus.OK);
         }
