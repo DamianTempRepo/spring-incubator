@@ -65,6 +65,8 @@ public class BookingsController {
             moloCellSmsClient.sendSms(customer.getPhoneNumber(), "Molo Air: Confirming flight " + flight.getFlightNumber() +
                     " booked for " + customer.getFirstName() + " " + customer.getFirstName() + " on " + flight.getDepartureTime() + ".");
 
+            moloCellSmsClient.enqueueMessage("This is a test");
+
             return new ResponseEntity<>(savedBooking, HttpStatus.OK);
         }
         catch (HttpClientErrorException e) {

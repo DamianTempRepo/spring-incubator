@@ -2,5 +2,13 @@ spring:
   application:
     name: notification-service
 
+  activemq:
+    broker-url: tcp://localhost:61616/
+    user: admin
+    password: admin
+
+  jms:
+    pub-sub-domain: true
+
 server:
   port: 8206
