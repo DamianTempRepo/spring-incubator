@@ -5,6 +5,7 @@ import entelect.training.incubator.spring.booking.service.BookingsService;
 import entelect.training.incubator.spring.customer.model.Customer;
 import entelect.training.incubator.spring.flight.model.Flight;
 import entelect.training.incubator.spring.loyalty.server.RewardsServiceImpl;
+import entelect.training.incubator.spring.notification.sms.client.impl.MoloCellSmsClient;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +27,15 @@ public class BookingsController {
 
     private final RewardsServiceImpl rewardsService;
 
+    private final MoloCellSmsClient moloCellSmsClient;
+
     private final RestTemplate restTemplate;
 
-    public BookingsController(BookingsService bookingsService, RewardsServiceImpl rewardsService, RestTemplate restTemplate) {
+    public BookingsController(BookingsService bookingsService, RewardsServiceImpl rewardsService,
+                              MoloCellSmsClient moloCellSmsClient, RestTemplate restTemplate) {
         this.bookingsService = bookingsService;
         this.rewardsService = rewardsService;
+        this.moloCellSmsClient = moloCellSmsClient;
         this.restTemplate = restTemplate;
     }
 
@@ -56,6 +61,9 @@ public class BookingsController {
             BigDecimal balance = rewardsService.getBalance(customer.getPassportNumber());
             balance = balance.add(BigDecimal.valueOf(100));
             rewardsService.updateBalance(customer.getPassportNumber(), balance);
+
+            moloCellSmsClient.sendSms(customer.getPhoneNumber(), "Molo Air: Confirming flight " + flight.getFlightNumber() +
+                    " booked for " + customer.getFirstName() + " " + customer.getFirstName() + " on " + flight.getDepartureTime() + ".");
 
             return new ResponseEntity<>(savedBooking, HttpStatus.OK);
         }
