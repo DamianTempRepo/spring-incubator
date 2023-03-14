@@ -2,6 +2,7 @@ package entelect.training.incubator.spring.booking.controller;
 
 import entelect.training.incubator.spring.booking.model.Booking;
 import entelect.training.incubator.spring.booking.service.BookingsService;
+import entelect.training.incubator.spring.loyalty.server.RewardsServiceImpl;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -21,10 +22,13 @@ public class BookingsController {
 
     private final BookingsService bookingsService;
 
+    private final RewardsServiceImpl rewardsService;
+
     private final RestTemplate restTemplate;
 
-    public BookingsController(BookingsService bookingsService, RestTemplate restTemplate) {
+    public BookingsController(BookingsService bookingsService, RewardsServiceImpl rewardsService, RestTemplate restTemplate) {
         this.bookingsService = bookingsService;
+        this.rewardsService = rewardsService;
         this.restTemplate = restTemplate;
     }
 
@@ -45,8 +49,10 @@ public class BookingsController {
         try {
             restTemplate.exchange("http://localhost:8201/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, String.class);
             restTemplate.exchange("http://localhost:8202/flights/" + booking.getFlightId(), HttpMethod.GET, entity, String.class);
-
             final Booking savedBooking  = bookingsService.createBooking(booking);
+
+            rewardsService.updateBalance("123", BigDecimal.valueOf(100));
+
             return new ResponseEntity<>(savedBooking, HttpStatus.OK);
         }
         catch (HttpClientErrorException e) {
