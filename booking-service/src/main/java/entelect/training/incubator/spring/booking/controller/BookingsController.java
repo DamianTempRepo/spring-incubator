@@ -2,6 +2,7 @@ package entelect.training.incubator.spring.booking.controller;
 
 import entelect.training.incubator.spring.booking.model.Booking;
 import entelect.training.incubator.spring.booking.service.BookingsService;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
@@ -32,10 +33,17 @@ public class BookingsController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        String plainCreds = "admin:is_a_lie";
+        byte[] plainCredsBytes = plainCreds.getBytes();
+        byte[] base64CredsBytes = Base64.encodeBase64(plainCredsBytes);
+        String base64Creds = new String(base64CredsBytes);
+
+        headers.add("Authorization", "Basic " + base64Creds);
         HttpEntity<?> entity = new HttpEntity<>(headers);
 
         try {
-            restTemplate.exchange("http://localhost:8202/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, String.class);
+            restTemplate.exchange("http://localhost:8201/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, String.class);
             restTemplate.exchange("http://localhost:8202/flights/" + booking.getFlightId(), HttpMethod.GET, entity, String.class);
 
             final Booking savedBooking  = bookingsService.createBooking(booking);
