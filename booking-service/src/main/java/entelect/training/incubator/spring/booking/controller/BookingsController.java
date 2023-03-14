@@ -4,10 +4,12 @@ import entelect.training.incubator.spring.booking.model.Booking;
 import entelect.training.incubator.spring.booking.service.BookingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -18,14 +20,33 @@ public class BookingsController {
 
     private final BookingsService bookingsService;
 
-    public BookingsController(BookingsService bookingsService) {
+    private final RestTemplate restTemplate;
+
+    public BookingsController(BookingsService bookingsService, RestTemplate restTemplate) {
         this.bookingsService = bookingsService;
+        this.restTemplate = restTemplate;
     }
 
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody Booking booking) {
 
-        return new ResponseEntity<>(null, HttpStatus.CREATED);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        HttpEntity<?> entity = new HttpEntity<>(headers);
+
+        try {
+            restTemplate.exchange("http://localhost:8202/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, String.class);
+            restTemplate.exchange("http://localhost:8202/flights/" + booking.getFlightId(), HttpMethod.GET, entity, String.class);
+
+            final Booking savedBooking  = bookingsService.createBooking(booking);
+            return new ResponseEntity<>(savedBooking, HttpStatus.OK);
+        }
+        catch (HttpClientErrorException e) {
+            System.out.println(e.getStatusCode());
+            System.out.println(e.getResponseBodyAsString());
+        }
+
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("{id}")
