@@ -4,6 +4,8 @@ import entelect.training.incubator.spring.booking.model.Booking;
 import entelect.training.incubator.spring.booking.repository.BookingRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class BookingsService {
 
@@ -15,5 +17,10 @@ public class BookingsService {
 
     public Booking createBooking(Booking booking) {
         return bookingRepository.save(booking);
+    }
+
+    public Booking getBookingById(Integer id) {
+        Optional<Booking> bookingOptional = bookingRepository.findById(id);
+        return bookingOptional.orElse(null);
     }
 }

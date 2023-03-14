@@ -60,7 +60,16 @@ public class BookingsController {
     @GetMapping("{id}")
     public ResponseEntity<?> getBookingById(@PathVariable Integer id) {
 
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        LOGGER.info("Processing booking search request for booking id={}", id);
+        Booking booking = this.bookingsService.getBookingById(id);
+
+        if (booking != null) {
+            LOGGER.trace("Found booking");
+            return new ResponseEntity<>(booking, HttpStatus.OK);
+        }
+
+        LOGGER.trace("Booking not found");
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("search")
