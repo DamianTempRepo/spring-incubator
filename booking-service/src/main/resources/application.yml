@@ -14,3 +14,7 @@ server:
   port: 8203
   error:
     include-message: always
+
+springdoc:
+  api-docs:
+    path: /bookings/api-docs

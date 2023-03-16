@@ -24,6 +24,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/bookings/**").hasAnyRole("USER", "LOYALTY_USER", "ADMIN")
                 .antMatchers(HttpMethod.POST, "/bookings/**").hasAnyRole("USER", "LOYALTY_USER", "ADMIN")
+                .antMatchers(HttpMethod.GET, "/bookings/api-docs").hasAnyRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/swagger-ui/**").hasAnyRole("ADMIN")
                 .anyRequest().denyAll()
                 .and()
                 .httpBasic();
