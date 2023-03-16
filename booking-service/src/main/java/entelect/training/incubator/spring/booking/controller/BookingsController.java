@@ -42,39 +42,28 @@ public class BookingsController {
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody Booking booking) {
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-        String plainCreds = "admin:is_a_lie";
-        byte[] plainCredsBytes = plainCreds.getBytes();
-        byte[] base64CredsBytes = Base64.encodeBase64(plainCredsBytes);
-        String base64Creds = new String(base64CredsBytes);
-
-        headers.add("Authorization", "Basic " + base64Creds);
+        HttpHeaders headers = setHttpHeaders();
         HttpEntity<?> entity = new HttpEntity<>(headers);
+        Customer customer = null;
 
         try {
-            Customer customer = restTemplate.exchange("http://localhost:8201/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, Customer.class).getBody();
+            customer = restTemplate.exchange("http://localhost:8201/customers/" + booking.getCustomerId(), HttpMethod.GET, entity, Customer.class).getBody();
             Flight flight = restTemplate.exchange("http://localhost:8202/flights/" + booking.getFlightId(), HttpMethod.GET, entity, Flight.class).getBody();
             final Booking savedBooking  = bookingsService.createBooking(booking);
 
-            BigDecimal balance = rewardsService.getBalance(customer.getPassportNumber());
-            balance = balance.add(BigDecimal.valueOf(100));
-            rewardsService.updateBalance(customer.getPassportNumber(), balance);
-
-            //moloCellSmsClient.enqueueMessage(customer.getPhoneNumber(), "Molo Air: Confirming flight " + flight.getFlightNumber() +
-            //        " booked for " + customer.getFirstName() + " " + customer.getFirstName() + " on " + flight.getDepartureTime() + ".");
-
-            moloCellSmsClient.enqueueMessage("This is a test");
-            System.out.println("message sent");
+            updateLoyaltyPoints(customer);
+            enqueueNotification(customer, flight);
 
             return new ResponseEntity<>(savedBooking, HttpStatus.OK);
         }
         catch (HttpClientErrorException e) {
-            System.out.println(e.getStatusCode());
-            System.out.println(e.getResponseBodyAsString());
-        }
 
+            if (customer == null) {
+                LOGGER.warn("Failed to find customer with id={}. Error status code={}", booking.getCustomerId(), e.getStatusCode());
+            } else {
+                LOGGER.warn("Failed to find flight with id={}. Error status code={}", booking.getFlightId(), e.getStatusCode());
+            }
+        }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
@@ -105,4 +94,30 @@ public class BookingsController {
         return new ResponseEntity<>(null, HttpStatus.OK);
     }
 
+    private HttpHeaders setHttpHeaders() {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        String plainCreds = "admin:pass";
+        byte[] plainCredsBytes = plainCreds.getBytes();
+        byte[] base64CredsBytes = Base64.encodeBase64(plainCredsBytes);
+        String base64Creds = new String(base64CredsBytes);
+
+        headers.add("Authorization", "Basic " + base64Creds);
+
+        return headers;
+    }
+
+    private void updateLoyaltyPoints(Customer customer) {
+
+        BigDecimal balance = rewardsService.getBalance(customer.getPassportNumber());
+        balance = balance.add(BigDecimal.valueOf(100));
+        rewardsService.updateBalance(customer.getPassportNumber(), balance);
+    }
+
+    private void enqueueNotification(Customer customer, Flight flight) {
+        moloCellSmsClient.enqueueMessage(customer.getPhoneNumber() +  ",Molo Air: Confirming flight " + flight.getFlightNumber() +
+                " booked for " + customer.getFirstName() + " " + customer.getFirstName() + " on " + flight.getDepartureTime() + ".");
+    }
 }
