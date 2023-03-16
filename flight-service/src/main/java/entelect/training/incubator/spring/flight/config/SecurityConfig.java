@@ -27,17 +27,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication().withUser("user").password("{noop}the_cake").roles("USER");
-        auth.inMemoryAuthentication().withUser("admin").password("{noop}is_a_lie").roles("ADMIN");
+        auth.inMemoryAuthentication().withUser("user").password("{noop}pass").roles("USER");
+        auth.inMemoryAuthentication().withUser("loyalty_user").password("{noop}pass").roles("LOYALTY_USER");
+        auth.inMemoryAuthentication().withUser("admin").password("{noop}pass").roles("ADMIN");
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable() // !!! Disclaimer: NEVER DISABLE CSRF IN PRODUCTION !!!
                 .authorizeRequests()
+                .antMatchers(HttpMethod.POST, "/flights/**").hasAnyRole( "ADMIN")
+                .antMatchers(HttpMethod.GET, "/flights/specials").hasAnyRole("LOYALTY_USER", "ADMIN")
                 .antMatchers(HttpMethod.GET, "/flights/**").permitAll()
-                .antMatchers(HttpMethod.POST, "/flights/**").permitAll()
-//                .anyRequest().denyAll()
+                .anyRequest().denyAll()
                 .and()
                 .httpBasic();
     }
