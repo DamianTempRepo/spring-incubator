@@ -4,7 +4,10 @@ import entelect.training.incubator.spring.flight.model.Flight;
 import entelect.training.incubator.spring.flight.model.FlightsSearchRequest;
 import entelect.training.incubator.spring.flight.model.SearchType;
 import entelect.training.incubator.spring.flight.repository.FlightRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class FlightsService {
+
 
     @Value("${loyalty.discount.flights.selection.futureDays}")
     private int discountedFlightFutureDays;
@@ -70,7 +74,9 @@ public class FlightsService {
         return discountedFlights;
     }
 
+    @Cacheable(value = "FLIGHT_SEARCH")
     public List<Flight> searchFlights(FlightsSearchRequest searchRequest) {
+
         Map<SearchType, Supplier<List<Flight>>> searchStrategies = new HashMap<>();
 
         searchStrategies.put(SearchType.DAYS_TO_DEPARTURE_SEARCH, () -> flightRepository.findByDepartureTimeBetweenDates(
